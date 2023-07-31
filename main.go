@@ -1,8 +1,9 @@
-package main 
+package main
 
 import (
 	"fmt"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -15,4 +16,13 @@ func main() {
 	parsed, _ := ParseTrackerResponse(response)
 	peers, _ := Unmarshal([]byte(parsed.Peers))
 	fmt.Println(peers)
+	var wg sync.WaitGroup
+	wg.Add(len(peers))
+	for _, p := range peers {
+		go func ()  {
+			handshake := p.DoHandShake(bto.InfoHash, peerId)
+			fmt.Println(handshake)				
+		}()
+	}
+	wg.Wait()
 }
