@@ -21,15 +21,6 @@ type bencodeTorrent struct {
 	Info 		bencodeInfo	`bencode:"Info"`
 }
 
-type TorrentFile struct {
-	Announce	string
-	InfoHash	[20]byte
-	PieceHashes	[][20]byte
-	PieceLength	int
-	Length		int 
-	Name		string
-}
-
 func createInfoHash(i bencodeInfo) ([]byte, error) {
 	var buf bytes.Buffer
 	err := bencode.Marshal(&buf, i)
@@ -85,4 +76,16 @@ func Open(r io.Reader) (TorrentFile, error) {
 		return TorrentFile{}, err
 	}
 	return bto.toTorrentFile()
+}
+
+func ParseTrackerResponse(input []byte) (TrackerResponse, error) {
+	tr := TrackerResponse{}
+	err := bencode.Unmarshal(bytes.NewReader(input), &tr)
+
+	if err != nil {
+		fmt.Errorf("Error Parsing the input")
+		return tr, err
+	}
+
+	return tr, nil
 }
