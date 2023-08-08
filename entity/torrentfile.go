@@ -1,4 +1,4 @@
-package main
+package entity
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ type TorrentFile struct {
 	Name		string
 }
 
-func (t *TorrentFile) buildTrackerURL(peerID [20]byte, port uint16) (string, error) {
+func (t *TorrentFile) BuildTrackerURL(peerID [20]byte, port uint16) (string, error) {
 	base, err := url.Parse(t.Announce)
 	if err != nil {
 		fmt.Errorf("Error while parsing the announce: %d", err)
@@ -32,4 +32,13 @@ func (t *TorrentFile) buildTrackerURL(peerID [20]byte, port uint16) (string, err
 	}
 	base.RawQuery = params.Encode()
 	return base.String(), nil
+}
+
+func (t *TorrentFile) CalculatePieceSize(index int) (int) {
+	start := index * t.PieceLength
+	end := start + t.PieceLength
+	if end > t.Length {
+		end = t.Length
+	}
+	return end - start
 }

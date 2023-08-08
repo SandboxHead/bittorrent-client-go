@@ -1,11 +1,11 @@
-package main 
+package helper 
 
 import (
 	"fmt"
 	"crypto/rand"
 )
 
-func peerIdGenerator() [20]byte {
+func PeerIdGenerator() [20]byte {
 	output := make([]byte, 20)
 	_, err := rand.Read(output)
 	if err != nil {

@@ -1,4 +1,4 @@
-package main 
+package entity 
 
 type TrackerResponse struct {
 	Interval	int

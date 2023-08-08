@@ -1,12 +1,14 @@
-package main
+package helper
 
 import (
+	"bittorrent-client-go/entity"
 	"bytes"
 	"fmt"
 
-	"github.com/jackpal/bencode-go"
 	"crypto/sha1"
 	"io"
+
+	"github.com/jackpal/bencode-go"
 )
 
 type bencodeInfo struct {
@@ -48,17 +50,17 @@ func toByteChunks(s string) ([][20]byte, error) {
 	return output, nil;
 }
 
-func (bto bencodeTorrent) toTorrentFile() (TorrentFile, error) {
+func (bto bencodeTorrent) toTorrentFile() (entity.TorrentFile, error) {
 	infoHash, err := createInfoHash(bto.Info)
 	if err != nil {
-		return TorrentFile{}, err
+		return entity.TorrentFile{}, err
 	}
 
 	byteChunk, err := toByteChunks(bto.Info.Pieces)
 	if err != nil {
-		return TorrentFile{}, err
+		return entity.TorrentFile{}, err
 	}
-	torrentFile := TorrentFile{
+	torrentFile := entity.TorrentFile{
 		Announce: bto.Announce,
 		InfoHash: [20]byte(infoHash),
 		PieceHashes: byteChunk,
@@ -69,24 +71,18 @@ func (bto bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 	return torrentFile, nil
 }
 
-func Open(r io.Reader) (TorrentFile, error) {
+func Open(r io.Reader) (entity.TorrentFile, error) {
 	bto := bencodeTorrent{}
 	err := bencode.Unmarshal(r, &bto)
 	if err != nil {
-		return TorrentFile{}, err
+		return entity.TorrentFile{}, err
 	}
 	return bto.toTorrentFile()
 }
 
-func ParseTrackerResponse(input []byte) (TrackerResponse, error) {
-	tr := TrackerResponse{}
-	err := bencode.Unmarshal(bytes.NewReader(input), &tr)
-
-	if err != nil {
-		fmt.Errorf("Error Parsing the input")
-		return tr, err
-	}
-
-	return tr, nil
+func ParseTrackerResponse(input []byte) (*entity.TrackerResponse, error) {
+	tr := entity.TrackerResponse{}
+	bencode.Unmarshal(bytes.NewReader(input), &tr)
+	return &tr, nil
 }
 

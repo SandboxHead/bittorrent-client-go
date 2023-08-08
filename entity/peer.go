@@ -1,4 +1,4 @@
-package main
+package entity
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ func (peer Peer) String() string {
 	return fmt.Sprintf("%v:%d", peer.IP, peer.Port)
 }
 
-func Unmarshal(peerBin []byte) ([]Peer, error) {
+func UnmarshalPeer(peerBin []byte) ([]Peer, error) {
 	const peerSize = 6
 	numPeers := len(peerBin) / peerSize
 	if len(peerBin)%peerSize != 0 {
@@ -35,12 +35,11 @@ func Unmarshal(peerBin []byte) ([]Peer, error) {
 	return peers, nil
 }
 
-func (p *Peer) DoHandShake(infoHash [20]byte, peerId [20]byte) (bool) {
-	conn, err := net.DialTimeout("tcp", p.String(), 3*time.Second)
+func (p *Peer) DoHandShake(infoHash [20]byte, peerId [20]byte) (net.Conn, error) {
+	conn, err := net.DialTimeout("tcp", p.String(), 5*time.Second)
 	if err != nil {
-		return false
+		return nil, err
 	}
-	defer conn.Close()
 
 	handShake := HandShake{
 		Pstr: "BitTorrent protocol",
@@ -53,15 +52,29 @@ func (p *Peer) DoHandShake(infoHash [20]byte, peerId [20]byte) (bool) {
 	_, err = conn.Write(message)
 	if err != nil {
 		fmt.Errorf("error sending message")
-		return false
+		conn.Close()
+		return nil, err
 	}
 
 	response := make([]byte, 1024)
 	n, err := conn.Read(response)
 	if err != nil {
 		fmt.Errorf("error receiving message")
-		return false
+		conn.Close()
+		return nil, err
 	}
-	handShakeResponse, _ := Deserialize(bytes.NewReader(response[:n]))
-	return bytes.Equal(handShake.InfoHash[:], handShakeResponse.InfoHash[:])
+	handShakeResponse, err := Deserialize(bytes.NewReader(response[:n]))
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	if bytes.Equal(handShake.InfoHash[:], handShakeResponse.InfoHash[:]) {
+		return conn, nil
+	} else {
+		err = fmt.Errorf("InfoHash doesn't match in the handshake")
+		conn.Close()
+		return nil, err
+	}
 } 
+
+
